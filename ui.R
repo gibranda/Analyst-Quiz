@@ -64,7 +64,7 @@ shinyUI(fluidPage(
             plotOutput("map"),
             p("Marginal posteriors of latitude and longitude of the analyst's position."),
             plotOutput("hist"),
-            p("Dashed vertical lines indicate corrdinate of nearest Zalando office (see also orange triangle in map).")
+            p("Dashed vertical lines indicate corrdinate of Zalando office Neue Bahnhofstrasse.")
         )
     )
     )

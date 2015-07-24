@@ -32,12 +32,10 @@ shinyServer(function(input, output, session) {
                     geom = "density2d", color = "black"
                 ) +
                 geom_point(aes(x = guess$lon, y = guess$lat), size = 4, color = "red")+
-                geom_point(aes(x = zlabels$lon, y = zlabels$lat), shape = 24, size = 4, color = "red", fill = "orange")+
                 theme(legend.position="none")
         } else {
             BerlinMap + 
                 geom_point(aes(x = guess$lon, y = guess$lat), size = 4, color = "red")+
-                geom_point(aes(x = zlabels$lon, y = zlabels$lat), shape = 24, size = 4, color = "red", fill = "orange")+
                 theme(legend.position="none")
         }
        
