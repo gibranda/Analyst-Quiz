@@ -32,28 +32,26 @@ set.seed(190684)
 # and distance to satellite path
 # 
 all_prob <- function(x){
-    box <- apply(sat, 2, function(x) c(min(x), max(x)))
-    
     # Load packages
     require(geosphere) 
     
     # Make algorithm stay in box
-    Lower <- c(13.1, 52.3) ; Upper <- c(13.608, 52.645)
-    penFac <- (1 + 3 *( sum(pmax(Lower - x, 0)^1.1) + sum(pmax(0, x - Upper)^1.1)))
+    Lower <- c(13, 52.1) ; Upper <- c(13.8, 52.7)
+    #penFac <- (1 + 3 *( sum(pmax(Lower - x, 0)^1.1) + sum(pmax(0, x - Upper)^1.1)))
     
-    x <- pmax(Lower, pmin(Upper, x))
-    d.spree = dist2Line(x, line)
+    #x <- pmax(Lower, pmin(Upper, x))
+    d.spree = dist2Line(x, line, distfun = distVincentySphere)
     log.prob.spree <- dnorm(d.spree[,1], mean = 0, sd = sdev.from.spree, log = TRUE)
     
     dist.bg <- distVincentySphere(bg, x)
     bg.log.prob <- dlnorm(dist.bg, meanlog = mu, sdlog= sqrt(sigma.2), log = TRUE)
     
-    d.sat = dist2Line(x, sat)
+    d.sat = dist2Line(x, sat.gc, distfun = distVincentySphere)
     log.prob.sat <- dnorm(d.sat[,1], mean = 0, sd = sdev.from.sat.line, log = TRUE)
     
     total.log.prob <- log.prob.spree + bg.log.prob + log.prob.sat
-    #cat("x = ", round(x, 3), " => ", prob * penFac, "\n")
-    return(total.log.prob * penFac)
+    #return(total.log.prob * penFac)
+    return(total.log.prob)
 }
 
 # DATA
@@ -75,6 +73,7 @@ sdev.from.spree <- 2730/1.96
 # Parameters for deviation from satellite path
 # Draw the grand circle line connecting the two satellite positions given
 sat_spline <- data.frame(gcIntermediate(sat[1,], sat[2,]))
+sat.gc <- greatCircle(sat[1,], sat[2,])
 sdev.from.sat.line <- 2400/1.96
 
 # Parameters of the radial profile distribution
@@ -110,16 +109,18 @@ mhall <- Metro_Hastings(all_prob,
                         pars = as.matrix(spree[14, ]), 
                         prop_sigma = diag(apply(spree, 2, var)),
                         par_names = c("lon", "lat"),
-                        iterations = 15000,
+                        iterations = 10000,
                         burn_in = 5000
 )
 
 # Collect data for plot
-scatter_all <- data.frame(lon = mhall$trace[, 1], lat = mhall$trace[,2 ])
+scatter_all <- data.frame(lon = mhall$trace[seq(1,nrow(mhall$trace),10), 1], 
+                          lat = mhall$trace[seq(1,nrow(mhall$trace),10), 2],
+                          iteration = seq_along(mhall$trace[mhall$trace[seq(1,nrow(mhall$trace),10), 1]]))
 
 
 # Take the 'posterior mean' as the best guess on the map
-guess <- apply(mhall$trace, 2, mean)
+guess <- apply(mhall$trace[seq(1,nrow(mhall$trace),10), ], 2, mean)
 guess <- data.frame(lon = guess[1], lat = guess[2])
 
 # Also try some hill-climbing using optim to see where this leads
@@ -138,11 +139,12 @@ peak <- data.frame(lon = mode$par[1], lat = mode$par[2])
 
 # Use ggmap to plot results on map of Berlin
 #Berlin <- get_stamenmap(bbox = c(left = 13.36, bottom = 52.45, right = 13.52, top = 52.55), maptype = "toner", zoom = 13)
-Berlin <-  get_googlemap(center = c(lon = 13.45705, lat=52.51122), zoom = 12, maptype = 'roadmap', markers = bg)
+Berlin <-  get_googlemap(center = c(lon = 13.45705, lat=52.51122), 
+                         zoom = 13, maptype = 'roadmap', markers = bg)
 BerlinMap <- ggmap(Berlin)
 
 # Get highest posterior regions to indicate on the map
-ContourLines <- as.data.frame(HPDregionplot(mcmc(data.matrix(mhall$trace)), prob=0.5))
+ContourLines <- as.data.frame(HPDregionplot(mcmc(data.matrix(mhall$trace), thin = 10), prob=0.3))
 
 
 BerlinMap + 
@@ -153,12 +155,13 @@ BerlinMap +
                  xend = endLon, 
                  yend = endLat), 
              data = spree_splines[12:nrow(spree_splines), ], size = 1.5, color = "blue") +
-    geom_polygon(data = ContourLines, aes(x = x, y = y), color = "red", size = 2, fill = "red", alpha = 0.1) +
+    #geom_point(aes(x = lon, y = lat), data = scatter_all[2201:nrow(scatter_all), ])
+    geom_polygon(data = ContourLines, aes(x = x, y = y), color = "red", size = 2, fill = "red", alpha = 0.2) +
     stat_density2d(
         aes(x = lon, y = lat, fill = ..level.., alpha = ..level..),
         size = 1, bins = 9, data = scatter_all,
         geom = "density2d", color = "black"
     ) +
-    geom_point(aes(x = guess$lon, y = guess$lat), size = 4, color = "red") #+ 
-    #geom_point(aes(x = peak$lon, y = peak$lat), size = 4, color = "black") 
+    geom_point(aes(x = guess$lon, y = guess$lat), size = 4, color = "red") + 
+    geom_point(aes(x = peak$lon, y = peak$lat), size = 4, color = "black") 
 

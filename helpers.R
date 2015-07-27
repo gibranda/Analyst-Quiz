@@ -1,4 +1,4 @@
-load(file = "data/data.RData")
+load(file = "data/data_large.RData")
 
 hist.dat <- data.frame(coordinate = c(mhall$trace[, 1], lat = mhall$trace[, 2]),
                        achse = rep(c("lon", "lat"), each=nrow(mhall$trace))

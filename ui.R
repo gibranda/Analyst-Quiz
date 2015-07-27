@@ -1,10 +1,7 @@
 ## ---- Setup-and-estimation ----
-list.of.packages <- c("ggmap",
-                      "coda",
+list.of.packages <- c("coda",
                       "MASS",
                       "emdbook",
-                      "ggplot2",
-                      "MHadaptive",
                       "geosphere"
 )
 
@@ -28,43 +25,19 @@ shinyUI(fluidPage(
     sidebarLayout(
         sidebarPanel(
             p("The map on the right indicates the likely position of the analyst.
-              You may zoom in further (see health warning below) and also adjust the 
-              appearance of the map and the probability coverage. 
-              The density of the analyst was simulated using an adaptive 
-              Metropolis-Hastings sampler."),
-            sliderInput("coverage", 
+Please select the probability with which you wish to find the analyst. Note, the higher the
+likelihood to find the analyst, the higher the search area."),
+            sliderInput("range", 
                         label = h6("Probability coverage (in %):"),
                         min = 1, max = 99, value = 20),
-            p("Here you can change the appearance of the underlying map."),
-            selectInput("mapType", label = h6("Select maptype:"), 
-                        choices = list("Roadmap" = "roadmap", 
-                                       "Terrain" = "terrain", 
-                                       "Satellite" = "satellite",
-                                       "Hybrid" = "hybrid"), 
-                        selected = "roadmap"),
-            p("Health warning: probability regions are not invariant to zooming in. 
-              ggplot discards points that fall outside the plot region and adjust the kernel density estimates. 
-              Contours largely invariant at levels 13 or lower. For levels 14 or higher contours are thus omitted."),
-            selectInput("zoom", 
-                       label = h6("Zoom (larger = zoom in, smaller = zoom out):"), 
-                       choices = list("10" = 10,
-                                      "11" = 11,
-                                      "12" = 12,
-                                      "13" = 13,
-                                      "14" = 14,
-                                      "15" = 15,
-                                      "16" = 16,
-                                      "17" = 17), 
-                       selected = 13) 
-            ),
+            em("The likelihood surface of the position of the analyst was simulated using an adaptive 
+              Metropolis-Hastings sampler (50,000 iterations with discarded as 25,000 warm-up sample)."),
+            p("Fork the ", a("code for this app", href = "https://github.com/pviefers/Analyst-Quiz"), " and the methodology behind at GitHub.")
+        ),
         
         mainPanel(
-            h5("Posterior mean analyst position (red dot on map)."),
-            verbatimTextOutput("guess"),
-            plotOutput("map"),
-            p("Marginal posteriors of latitude and longitude of the analyst's position."),
-            plotOutput("hist"),
-            p("Dashed vertical lines indicate corrdinate of Zalando office Neue Bahnhofstrasse.")
+            h3("Analyst position."),
+            leafletOutput("map")
         )
     )
     )
