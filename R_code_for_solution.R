@@ -1,4 +1,39 @@
-## ---- Setup-and-estimation ----
+# 
+# Stochastic Location Simulation Model
+# -----------------------------------------------------
+# Copyright: Paul Viefers <paulviefers@gmail.com>
+# Date: 24 July 2015
+# License: Apache License, Version 2.0
+# 
+# 
+################################################################################
+############# DESCRIPTION ######################################################
+################################################################################
+# 
+# The basic idea of this program is to simulate the density of the possible location
+# of an agent on a map. 
+# 
+# The information available about the location is given in form of three independent
+# distribution of the map (or surface). The parameters of the distributions are given
+# in the text to this quiz. 
+# 
+# The idea behind the solution is to simulate the _joint_ denisty of the location, given
+# all three distributions. Since all given distributions are statistically independent,
+# their joint distribution is given by their product. 
+# Since the resulting distribution is analytically intractable, but easy to evaluate at a 
+# given piont I use the Metropolis-Hastings algorithm to simulate it. 
+# 
+# The exact implementation is given below. Notably, I make use of two important packages.
+# First, package 'geosphere' which allows me to make exact caluculations on the the manifold
+# that is our globe. This avoids error prone transformations from polar to cartesian coordinates etc.
+# Second, the package 'MHadaptive' provides an adaptive MH algorithm that tunes the sampler over
+# iterations to make it more efficient.  
+
+################################################################################
+################ CODE ##########################################################
+################################################################################
+
+# Check for required packages and install
 list.of.packages <- c("ggmap",
                       "coda",
                       "MASS",
@@ -37,9 +72,7 @@ all_prob <- function(x){
     
     # Make algorithm stay in box
     Lower <- c(13, 52.1) ; Upper <- c(13.8, 52.7)
-    #penFac <- (1 + 3 *( sum(pmax(Lower - x, 0)^1.1) + sum(pmax(0, x - Upper)^1.1)))
-    
-    #x <- pmax(Lower, pmin(Upper, x))
+
     d.spree = dist2Line(x, line, distfun = distVincentySphere)
     log.prob.spree <- dnorm(d.spree[,1], mean = 0, sd = sdev.from.spree, log = TRUE)
     
@@ -50,7 +83,7 @@ all_prob <- function(x){
     log.prob.sat <- dnorm(d.sat[,1], mean = 0, sd = sdev.from.sat.line, log = TRUE)
     
     total.log.prob <- log.prob.spree + bg.log.prob + log.prob.sat
-    #return(total.log.prob * penFac)
+
     return(total.log.prob)
 }
 
@@ -123,19 +156,24 @@ scatter_all <- data.frame(lon = mhall$trace[seq(1,nrow(mhall$trace),10), 1],
 guess <- apply(mhall$trace[seq(1,nrow(mhall$trace),10), ], 2, mean)
 guess <- data.frame(lon = guess[1], lat = guess[2])
 
-# Also try some hill-climbing using optim to see where this leads
-mode <- optim(spree[14, ],
-              fn=all_prob, method="BFGS", 
-              hessian = TRUE,
-              control=list(fnscale=-1))
-sp <- mode$par
-
-# Consider a second attempt using Nelder-Mead for robustness
-mode <- optim(sp, 
-              fn=all_prob, method="Nelder-Mead", 
-              hessian = TRUE,
-              control=list(fnscale=-1))
-peak <- data.frame(lon = mode$par[1], lat = mode$par[2])
+# You may also try some hill-climbing using optim to see where this leads
+# but the solution vrtually coincides with the mean location from simulation.
+# 
+# If you wish to use numerical maximization, please also make sure you restrict
+# the parameter values for function 'all_prob' so they do not, e.g. exceed 180°.
+# 
+# mode <- optim(spree[14, ],
+#               fn=all_prob, method="BFGS", 
+#               hessian = TRUE,
+#               control=list(fnscale=-1))
+# sp <- mode$par
+# 
+# # Consider a second attempt using Nelder-Mead for robustness
+# mode <- optim(sp, 
+#               fn=all_prob, method="Nelder-Mead", 
+#               hessian = TRUE,
+#               control=list(fnscale=-1))
+# peak <- data.frame(lon = mode$par[1], lat = mode$par[2])
 
 # Use ggmap to plot results on map of Berlin
 #Berlin <- get_stamenmap(bbox = c(left = 13.36, bottom = 52.45, right = 13.52, top = 52.55), maptype = "toner", zoom = 13)
@@ -146,7 +184,6 @@ BerlinMap <- ggmap(Berlin)
 # Get highest posterior regions to indicate on the map
 ContourLines <- as.data.frame(HPDregionplot(mcmc(data.matrix(mhall$trace), thin = 10), prob=0.3))
 
-
 BerlinMap + 
     geom_point(aes(x = bg$lon, y = bg$lat), size = 1, color = "black") + 
     geom_point(aes(x = lon, y = lat), data = sat_spline, size = 3, color = "black") +
@@ -155,13 +192,10 @@ BerlinMap +
                  xend = endLon, 
                  yend = endLat), 
              data = spree_splines[12:nrow(spree_splines), ], size = 1.5, color = "blue") +
-    #geom_point(aes(x = lon, y = lat), data = scatter_all[2201:nrow(scatter_all), ])
     geom_polygon(data = ContourLines, aes(x = x, y = y), color = "red", size = 2, fill = "red", alpha = 0.2) +
     stat_density2d(
         aes(x = lon, y = lat, fill = ..level.., alpha = ..level..),
         size = 1, bins = 9, data = scatter_all,
         geom = "density2d", color = "black"
     ) +
-    geom_point(aes(x = guess$lon, y = guess$lat), size = 4, color = "red") + 
-    geom_point(aes(x = peak$lon, y = peak$lat), size = 4, color = "black") 
-
+    geom_point(aes(x = guess$lon, y = guess$lat), size = 4, color = "red")
