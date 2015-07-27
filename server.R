@@ -1,7 +1,6 @@
 library(shiny)
-library(gridExtra)
-library(scales)
 library(dplyr)
+
 
 shinyServer(function(input, output, session) {
     
