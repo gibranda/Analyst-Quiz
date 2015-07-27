@@ -17,9 +17,9 @@ likelihood to find the analyst, the larger the search area."),
             sliderInput("range", 
                         label = h6("Probability coverage (in %):"),
                         min = 1, max = 99, value = 20),
-            em("The likelihood surface of the position of the analyst was simulated using an adaptive 
-              Metropolis-Hastings sampler (50,000 iterations with discarded as 25,000 warm-up sample)."),
-            p("Fork the ", a("code for this app", href = "https://github.com/pviefers/Analyst-Quiz"), " and the methodology behind at GitHub.")
+            em("The probability region shown in blue in the map was simulated using an ", a("adaptive 
+              Metropolis-Hastings", href="https://cran.r-project.org/web/packages/MHadaptive/MHadaptive.pdf"), " sampler (50,000 iterations with discarded as 25,000 warm-up sample). The marker shows the mean of this simulated distribution."),
+            p(a("Code for this app", href = "https://github.com/pviefers/Analyst-Quiz"), " available at GitHub.")
         ),
         
         mainPanel(
