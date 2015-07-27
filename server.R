@@ -30,6 +30,8 @@ shinyServer(function(input, output, session) {
     # and the rendering of the map. Now the map is re-rendered every time the input
     # changes, which is not handy. However, using leafletProxy() throws an error and
     # the response time without proxy is still fair enough.
+    # See: https://groups.google.com/forum/#!topic/shiny-discuss/ZwsyTqTOCf0
+    # I will be happy to pull any solution to this.
     observe({
         output$map <- renderLeaflet({
             leaflet() %>%
@@ -37,12 +39,6 @@ shinyServer(function(input, output, session) {
                 addMarkers(data=guess, popup=analystPos) %>% 
                 addPolygons(data = coverage())
         })
-    })
-    
-    output$hist <- renderPlot({
-        par(mfcol = c(1,2))
-        plot(density(mhall$trace[,1]), main = "latitude"); abline(v=13.471004300000004, lty=2, col ="grey")
-        plot(density(mhall$trace[,2]), main = "longitude"); abline(v=52.5066796, lty=2, col ="grey")
     })
 }
 )

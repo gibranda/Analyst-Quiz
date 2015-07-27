@@ -25,8 +25,8 @@ shinyUI(fluidPage(
     sidebarLayout(
         sidebarPanel(
             p("The map on the right indicates the likely position of the analyst.
-Please select the probability with which you wish to find the analyst. Note, the higher the
-likelihood to find the analyst, the higher the search area."),
+The expected position (marker) together with a probability region around it. You may select the probability coverage of this region using the slider below. You will find the analyst with the given probability. The higher the
+likelihood to find the analyst, the larger the search area."),
             sliderInput("range", 
                         label = h6("Probability coverage (in %):"),
                         min = 1, max = 99, value = 20),
