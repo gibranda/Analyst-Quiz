@@ -6,7 +6,6 @@ shinyServer(function(input, output, session) {
     
     ## Interactive Map ###########################################
     ## 
-    # Get some highest posterior regions to indicate on the map
     analystPos <- paste(sep = " ",
                         "Top Analyst: Expected Position <br/>",
                         "longitude=", round(guess[1],4),"<br/>",
@@ -23,21 +22,25 @@ shinyServer(function(input, output, session) {
         cov
     })
     
-    
-    
-    # In a more elaborate application I'd separate the observer and the observed events
-    # and the rendering of the map. Now the map is re-rendered every time the input
-    # changes, which is not handy. However, using leafletProxy() throws an error and
-    # the response time without proxy is still fair enough.
-    # See: https://groups.google.com/forum/#!topic/shiny-discuss/ZwsyTqTOCf0
-    # I will be happy to pull any solution to this.
-    observe({
-        output$map <- renderLeaflet({
-            leaflet() %>%
-                addTiles() %>%
-                addMarkers(data=guess, popup=analystPos) %>% 
-                addPolygons(data = coverage())
-        })
+    output$map <- renderLeaflet({
+        # Use leaflet() here, and only include aspects of the map that
+        # won't need to change dynamically (at least, not unless the
+        # entire map is being torn down and recreated).
+        leaflet() %>%
+            addTiles() %>%
+            setView(guess$lon, guess$lat, zoom = 12) %>%
+            addMarkers(data=guess, popup=analystPos)
     })
+    
+    observe({
+        proxy <- leafletProxy("map", data = guess)
+        
+        # Remove any existing legend, and only if the legend is
+        # enabled, create a new one.
+        proxy %>% 
+            clearShapes() %>% 
+            addPolygons(data = coverage())
+    })
+
 }
 )

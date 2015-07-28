@@ -21,7 +21,7 @@
 # all three distributions. Since all given distributions are statistically independent,
 # their joint distribution is given by their product. 
 # Since the resulting distribution is analytically intractable, but easy to evaluate at a 
-# given piont I use the Metropolis-Hastings algorithm to simulate it. 
+# given piont I use the Metropolis-Hastings algorithm to simulate it.
 # 
 # The exact implementation is given below. Notably, I make use of two important packages.
 # First, package 'geosphere' which allows me to make exact caluculations on the the manifold
